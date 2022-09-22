@@ -107,10 +107,14 @@ class Mlc:
 class LsCpu:
     def __init__(self, lines):
         for line in lines:
-            line = line.rstrip("\n").replace("(", "_").replace(")", "")
-            line = line.replace(" ", "")
+            line = line.rstrip("\n")
             if line != '':
                 line = line.split(':')
+                line[0] = line[0].replace("(", "_").replace(")", "")
+                line[0] = line[0].replace(" ", "")
+                line[1] = line[1].split("(")
+                line[1] = line[1][0]
+                line[1] = line[1].replace(" ", "")
                 setattr(self, line[0], line[1])
 
     def get_num_sockets(self):
