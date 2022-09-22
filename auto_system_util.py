@@ -187,6 +187,8 @@ class DDRDmidecode:
                 continue
             if getattr(self, attr)['Manufacturer'] == ' NO DIMM':
                 continue
+            if getattr(self, attr)['Size'] == "No Module Installed":
+                continue
             self.handles += 1
             bank_locator = getattr(self, attr)['Locator']
             bank_locator = bank_locator.split("_")
@@ -253,6 +255,7 @@ class UncoreClock:
 
 
 def execute_cmd(cmd):
+    print(f"running command: {cmd}")
     lines = []
     p1 = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
     while True:
