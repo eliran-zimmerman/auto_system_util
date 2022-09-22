@@ -107,10 +107,14 @@ class Mlc:
 class LsCpu:
     def __init__(self, lines):
         for line in lines:
-            line = line.rstrip("\n").replace("(", "_").replace(")", "")
-            line = line.replace(" ", "")
+            line = line.rstrip("\n")
             if line != '':
                 line = line.split(':')
+                line[0] = line[0].replace("(", "_").replace(")", "")
+                line[0] = line[0].replace(" ", "")
+                line[1] = line[1].split("(")
+                line[1] = line[1][0]
+                line[1] = line[1].replace(" ", "")
                 setattr(self, line[0], line[1])
 
     def get_num_sockets(self):
@@ -187,6 +191,8 @@ class DDRDmidecode:
                 continue
             if getattr(self, attr)['Manufacturer'] == ' NO DIMM':
                 continue
+            if getattr(self, attr)['Size'] == "No Module Installed":
+                continue
             self.handles += 1
             bank_locator = getattr(self, attr)['Locator']
             bank_locator = bank_locator.split("_")
@@ -253,6 +259,7 @@ class UncoreClock:
 
 
 def execute_cmd(cmd):
+    print(f"running command: {cmd}")
     lines = []
     p1 = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
     while True:
