@@ -47,15 +47,15 @@ class CPUSystem:
     def finish(self):
         print("\n\n**********************************************")
         print(f"Number of CPU sockets     : {self.lscpu.get_num_sockets()}")
-        print(f"DDR size per Socket       : {self.ddr_dmidecode.get_DDR_size()}")
-        print(f"DDR BW Read               : {self.ddr_bw_read}")
-        print(f"DDR BW Read+Write         : {self.ddr_bw_rw}")
-        print(f"LLC size (per Socket)     : {self.lscpu.get_l3_cache_size_per_socket()}")
-        print(f"LLC BW Read               : {self.llc_bw_read}")
-        print(f"LLC BW Read+Write         : {self.llc_bw_rw}")
-        print(f"L2 Cache size (per Core)  : {self.lscpu.get_l2_cache_size_per_core()}")
-        print(f"L2 Cache BW Read          : {self.core_l2_bw_read}")
-        print(f"L2 Cache BW Read+Write    : {self.core_l2_bw_rw}")
+        print(f"DDR size per Socket       : {self.ddr_dmidecode.get_DDR_size()/self.lscpu.get_num_sockets()} [MB]")
+        print(f"DDR BW Read               : {self.ddr_bw_read} [GB/sec]")
+        print(f"DDR BW Read+Write         : {self.ddr_bw_rw} [GB/sec]")
+        print(f"LLC size (per Socket)     : {self.lscpu.get_l3_cache_size_per_socket()} [MB]")
+        print(f"LLC BW Read               : {self.llc_bw_read} [GB/sec]")
+        print(f"LLC BW Read+Write         : {self.llc_bw_rw} [GB/sec]")
+        print(f"L2 Cache size (per Core)  : {self.lscpu.get_l2_cache_size_per_core()} [MB]")
+        print(f"L2 Cache BW Read          : {self.core_l2_bw_read} [GB/sec]")
+        print(f"L2 Cache BW Read+Write    : {self.core_l2_bw_rw} [GB/sec]")
         print("**********************************************\n\n")
 
 
@@ -184,29 +184,34 @@ class DDRDmidecode:
     def extract_num_of_DDR_dimms(self):
         bank_dict = {}
         bank_list = []
-        local_attr = None
-        called = False
+        total_size = 0
         for attr in self.__dict__:
             if "Handle" not in attr:
                 continue
             if getattr(self, attr)['Manufacturer'] == ' NO DIMM':
                 continue
-            if getattr(self, attr)['Size'] == "No Module Installed":
+            if "No Module Installed" in getattr(self, attr)['Size']:
                 continue
             self.handles += 1
             bank_locator = getattr(self, attr)['Locator']
-            bank_locator = bank_locator.split("_")
-            bank_locator = bank_locator[0].split("-")
-            if bank_locator[0] not in bank_list:
-                bank_dict[bank_locator[0]] = 1
-                bank_list.append(bank_locator[0])
-                if not called:
-                    local_attr = attr
-                    called = True
+            size = getattr(self, attr)['Size']
+            size = size.split(" ")
+            mult = 1
+            if 'KB' in size[2]:
+                mult = 1 / 1024
+            elif 'GB' in size[2]:
+                mult = 1024
+            size = int(size[1]) * mult
+            total_size += size
+            if bank_locator not in bank_list:
+                bank_dict[bank_locator] = 1
+                bank_list.append(bank_locator)
                 continue
             else:
-                bank_dict[bank_locator[0]] += 1
-        self.ref_dimm_attr = local_attr
+                bank_dict[bank_locator] += 1
+        self.bank_dict = bank_dict
+        self.bank_list = bank_list
+        self.total_size = total_size
 
         def first_item(items):
             for n, v in items:
@@ -223,17 +228,7 @@ class DDRDmidecode:
         return speed
 
     def get_DDR_size(self):
-        size = getattr(self, self.ref_dimm_attr)['Size']
-        size = size.split(" ")
-
-        mult = 1
-        if 'KB' in size[2]:
-            mult = 1 / 1024
-        elif 'GB' in size[2]:
-            mult = 1024
-        size = int(size[1]) * mult
-        # return in MB
-        return size * self.handles / self.num_of_DDR_slots
+        return self.total_size
 
 
 class UncoreClock:
@@ -310,11 +305,11 @@ out1 = execute_cmd(dmidecode_t17)
 dmi = DDRDmidecode(out1)
 lscpu = LsCpu(out)
 update_mlc_cmd(lscpu)
-mlc_l1_lines = []
 print("Start sampling ....")
-for i in range(mlc_for_avg):
-    mlc_l1_lines += execute_cmd(mlc_cmds['L1'])
-mlc_l1 = Mlc(mlc_l1_lines)
+# mlc_l1_lines = []
+# for i in range(mlc_for_avg):
+#     mlc_l1_lines += execute_cmd(mlc_cmds['L1'])
+# mlc_l1 = Mlc(mlc_l1_lines)
 mlc_l2_lines = []
 for i in range(mlc_for_avg):
     mlc_l2_lines += execute_cmd(mlc_cmds['L2'])
@@ -327,7 +322,7 @@ mlc_ddr_lines = []
 for i in range(mlc_for_avg):
     mlc_ddr_lines += execute_cmd(mlc_cmds['DDR'])
 mlc_ddr = Mlc(mlc_ddr_lines)
-cpu_sys = CPUSystem(lscpu, dmi, mlc_l1, mlc_l2, mlc_llc, mlc_ddr)
+cpu_sys = CPUSystem(lscpu, dmi, None, mlc_l2, mlc_llc, mlc_ddr)
 cpu_sys.calculate()
 cpu_sys.finish()
 
