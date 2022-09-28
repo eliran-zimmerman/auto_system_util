@@ -305,11 +305,11 @@ out1 = execute_cmd(dmidecode_t17)
 dmi = DDRDmidecode(out1)
 lscpu = LsCpu(out)
 update_mlc_cmd(lscpu)
-mlc_l1_lines = []
 print("Start sampling ....")
-for i in range(mlc_for_avg):
-    mlc_l1_lines += execute_cmd(mlc_cmds['L1'])
-mlc_l1 = Mlc(mlc_l1_lines)
+# mlc_l1_lines = []
+# for i in range(mlc_for_avg):
+#     mlc_l1_lines += execute_cmd(mlc_cmds['L1'])
+# mlc_l1 = Mlc(mlc_l1_lines)
 mlc_l2_lines = []
 for i in range(mlc_for_avg):
     mlc_l2_lines += execute_cmd(mlc_cmds['L2'])
@@ -322,7 +322,7 @@ mlc_ddr_lines = []
 for i in range(mlc_for_avg):
     mlc_ddr_lines += execute_cmd(mlc_cmds['DDR'])
 mlc_ddr = Mlc(mlc_ddr_lines)
-cpu_sys = CPUSystem(lscpu, dmi, mlc_l1, mlc_l2, mlc_llc, mlc_ddr)
+cpu_sys = CPUSystem(lscpu, dmi, None, mlc_l2, mlc_llc, mlc_ddr)
 cpu_sys.calculate()
 cpu_sys.finish()
 
