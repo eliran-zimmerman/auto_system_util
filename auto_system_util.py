@@ -47,15 +47,15 @@ class CPUSystem:
     def finish(self):
         print("\n\n**********************************************")
         print(f"Number of CPU sockets     : {self.lscpu.get_num_sockets()}")
-        print(f"DDR size per Socket       : {self.ddr_dmidecode.get_DDR_size()/self.lscpu.get_num_sockets()} MB")
-        print(f"DDR BW Read               : {self.ddr_bw_read}")
-        print(f"DDR BW Read+Write         : {self.ddr_bw_rw}")
-        print(f"LLC size (per Socket)     : {self.lscpu.get_l3_cache_size_per_socket()} MB")
-        print(f"LLC BW Read               : {self.llc_bw_read}")
-        print(f"LLC BW Read+Write         : {self.llc_bw_rw}")
-        print(f"L2 Cache size (per Core)  : {self.lscpu.get_l2_cache_size_per_core()} MB")
-        print(f"L2 Cache BW Read          : {self.core_l2_bw_read}")
-        print(f"L2 Cache BW Read+Write    : {self.core_l2_bw_rw}")
+        print(f"DDR size per Socket       : {self.ddr_dmidecode.get_DDR_size()/self.lscpu.get_num_sockets()} [MB]")
+        print(f"DDR BW Read               : {self.ddr_bw_read} [GB/sec]")
+        print(f"DDR BW Read+Write         : {self.ddr_bw_rw} [GB/sec]")
+        print(f"LLC size (per Socket)     : {self.lscpu.get_l3_cache_size_per_socket()} [MB]")
+        print(f"LLC BW Read               : {self.llc_bw_read} [GB/sec]")
+        print(f"LLC BW Read+Write         : {self.llc_bw_rw} [GB/sec]")
+        print(f"L2 Cache size (per Core)  : {self.lscpu.get_l2_cache_size_per_core()} [MB]")
+        print(f"L2 Cache BW Read          : {self.core_l2_bw_read} [GB/sec]")
+        print(f"L2 Cache BW Read+Write    : {self.core_l2_bw_rw} [GB/sec]")
         print("**********************************************\n\n")
 
 
@@ -190,7 +190,7 @@ class DDRDmidecode:
                 continue
             if getattr(self, attr)['Manufacturer'] == ' NO DIMM':
                 continue
-            if getattr(self, attr)['Size'] == "No Module Installed":
+            if "No Module Installed" in getattr(self, attr)['Size']:
                 continue
             self.handles += 1
             bank_locator = getattr(self, attr)['Locator']
